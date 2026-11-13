@@ -1,0 +1,159 @@
+Goals_pa2_code_FastPlace
+Implement an analytic placement algorithm to (partially) solve the placement problem
+based on the FastPlace paper
+Assumptions: 
+    The input parser for the ibmxx benchmarks is provided as “suraj_parser.cpp” and
+    “suraj_parser.h”.
+    • NOTE: a potential source of error is how the array pinLocations is indexed. Make
+    sure you read the comments in the .h file.
+    • You need to use the formulation in the paper to convert edges and hyperedges to
+    cliques or stars.
+    • You need to generate the Q matrix(Sparse, symmetric and positive definite) and the dx and dy vectors, solve for x and y
+    vectors, and then perform multiple iterations of cell spreading using the grid
+    boundary method explained in the paper. Set the grid to be 5x5 over the whole chip
+    area. After each spreading step, update the spreading forces and solve the quadratic
+    system again.
+    • Consider all cells to have a dimension of 1x1. For the movement of the cells, use a
+    fixed value of 0.8 for αx and αy.
+    • Your code needs to be modular, i.e., divided into multiple files that are compiled
+    together using a Makefile. Avoid writing very long functions.
+    • You can assume all moveable cells are at (ChipWidth/2, ChipHeight/2), and calculate
+    wirelength. Feel free to report your numbers on the forum so that you can compare
+    against others’ numbers and debug your code if necessary.
+    • You will also implement the graphical user interface (offline viewing of the results that
+    you have written in a file).
+
+Input Files: 
+The toy circuits are named toy0x, with extensions .net, .are, .kiaPad. Larger files are
+called ibmXX.net, .are, .kiaPad.
+The .net has the circuit size numbers (number of cells, I/O pads, nets) and the netlist. The
+.are has the area number (which you can ignore), and the .kiaPad file has the I/O pad
+coordinates.
+You don’t need to know the format of the files, but you do need to understand the format
+of the data structures that Suraj’s parser creates very well. The .cpp file contains detailed
+explanations of a small circuit.
+
+Command Line Parameters: 
+There is only one command line argument, and that is the circuit file name WITHOUT
+EXTENSIONS. The three .net, .are, and .kiaPad files should be present.
+
+Program output: 
+Your program should output the square root of the sum of squared wirelengths of the
+circuit. Note that you calculate the squared wirelength of individual nets (possibly
+derived from hyperedges), using the weight scheme presented in the FastPlace paper (γW
+and kγW with γ=1/(k−1) for clique and star hyperedges. Simple edge weights remain W).
+Report the wirelength before spreading, after the first iteration, and after the final
+iteration. Also record the wirelength after every iteration.
+Your program should also create a file in which you write the x,y coordinates of all cells
+(I/O pads and moveable cells). The format should be similar to the .kiaPad file.
+It should also create a graphical representation of the placement before and after iterative
+spreading, which means that you need to output the coordinates before and after
+spreading in two separate files. Also generate a plot of wirelength versus iteration
+number.
+
+Phase 1: 
+In Phase 1, you should build the backbone of the program: reading the input file,
+populating the Q matrix and d vectors. You can test your code using the toy example(s)
+and verify your matrix entries manually.
+You should also test with the ibm files and make sure your program does not crash.
+
+You will also implement the graphical user interface (offline viewing of the results that
+you have written in a file).
+
+Phase 2 (due November 27, 2026)
+In Phase 2, you would implement solving the matrix equation using the Conjugate
+Gradient method and then spreading the cells. You need to repeat the cell-shifting and
+quadratic re-optimization process for multiple iterations. Recalculate the spreading forces
+after each iteration and monitor the change in wirelength.
+Run at least 10 iterations, unless a documented convergence criterion is reached earlier.
+Save wirelength at every iteration and show the final placement and a wirelength-versus-
+iteration plot.
+
+Appendix I: Benchmark Statistics:
+Ckt #Cells #Pads #Nets #Pins #Rows
+ibm01 12506 246 14111 50566 96
+ibm02 19342 259 19584 81199 109
+ibm03 22853 283 27401 93573 121
+ibm04 27220 287 31970 105859 136
+ibm05 28146 1201 28446 126308 139
+ibm06 32332 166 34826 128182 126
+ibm07 45639 287 48117 175639 166
+ibm08 51023 286 50513 204890 170
+ibm09 53110 285 60902 222088 183
+ibm10 68685 744 75196 297567 234
+ibm11 70152 406 81454 280786 208
+ibm12 70439 637 77240 317760 242
+ibm13 83709 490 99666 357075 224
+ibm14 147088 517 152772 546816 305
+ibm15 161187 383 186608 715823 303
+ibm16 182980 504 190048 778823 347
+ibm17 184752 743 189581 860036 379
+ibm18 210341 272 201920 819697 361
+
+Appendix II: Hints
+Wirelength: 
+We start by first initializing the Q, dx, dy with all zeros. Then, we iterate through each hyper-
+edge, and for each edge within this hyper-edge we add the "contribution" or weight scaled by
+gamma to the respective entries in Q matrix. For dx, dy we also multiply it by x/y location.
+To give an example of this, we show below what gets added to the Q-matrix for toy01 (drawn
+on page 2) for a few hyperedges. Note that nodes 0, 1, and 2 correspond to a0, a1, and a2,
+respectively in the figure, and node 3 is the star node introduced on hyperedge h1.
+For hEdge: 0 (Clique with weight = 1)
+Q[0][0] += 1.00
+dx[0] += -2.00
+dy[0] += -0.00
+For hEdge: 1 (Star with weight = 1.25)
+Q[2][2] += 1.25
+Q[3][3] += 1.25
+Q[2][3] -= 1.25
+Q[3][2] -= 1.25
+Q[0][0] += 1.25
+Q[3][3] += 1.25
+Q[0][3] -= 1.25
+Q[3][0] -= 1.25
+Q[3][3] += 1.25
+dx[3] += -0.00
+dy[3] += -6.25
+Q[3][3] += 1.25
+dx[3] += -6.25
+dy[3] += -6.25
+Q[1][1] += 1.25
+Q[3][3] += 1.25
+Q[1][3] -= 1.25
+Q[3][1] -= 1.25
+… (and so on)
+
+Final values:
+Q Matrix:
+4.25 -1 0 -1.25
+-1 4.25 0 -1.25
+0 0 1.25 -1.25
+-1.25 -1.25 -1.25 6.25
+dx vector:
+-2 -7 0 -6.25
+dy vector:
+-5 -5 0 -12.5
+Note: dx[3], dy[3] is added twice because there are two pins in the hyperedge 1 (p1, p2).
+Q[3][3] is added five times, once for each of the five pins in the net.
+Next, for calculation of the weighted wirelengths:
+1. We iterate through each combination of node
+2. An edge exists between the two nodes, if the corresponding entry in Q-matrix has a
+value < 0.
+3. If an edge exists, add the following to the total wirelength
+−𝑄𝑖𝑗𝑥 ((𝑥𝑖 − 𝑥𝑗)2 + (𝑦𝑖 − 𝑦𝑗)2),
+where 𝑥𝑖, 𝑥𝑗, 𝑦𝑖, 𝑦𝑗 refer to location of the nodes in the x and y vectors.
+4. Take the square-root of this sum after you have iterated through all possible nodes
+combinations.
+For example, take node 0 and 1, Q[0][1] or Q[1][0] is -1, hence we add
+−(−1)𝑥((𝑥0 − 𝑥1)2 + (𝑦0 − 𝑦1)2),
+where the 𝑥𝑖 𝑎𝑛𝑑 𝑦𝑖 values will be the location of nodes 0 and 1 in x and y vectors. Note that
+we only add this once for the total sum, even if there are two entries in Q-matrix. Next, if we
+check nodes 0 and 2, Q[2][0] or Q[0][2] is 0, so we don't add anything. We repeat this for all
+node combinations.
+We are simplifying wirelength calculation by only adding the lengths between movable
+nodes. You can ignore connections to fixed pins, even though they are usually added.
+Lastly, to plot the placements, you will need to export the x and y locations of each cell in
+some text file which is then parsed by your python script. To make the final part easier, you
+can simply plot the placements using a library such as matplotlib, and save the plot as high-
+resolution PNGs. Make sure the marker size is small and has a transparency < 1, so the
+overlap between cells can be visualized.

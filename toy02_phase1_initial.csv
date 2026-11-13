@@ -1,0 +1,14 @@
+name,x,y,type
+a0,5.5,5.5,cell
+a1,5.5,5.5,cell
+a2,5.5,5.5,cell
+a3,5.5,5.5,cell
+a4,5.5,5.5,cell
+a5,5.5,5.5,cell
+a6,5.5,5.5,cell
+p1,0,10,pad
+p2,5,10,pad
+p3,10,10,pad
+p4,10,0,pad
+p5,3,0,pad
+p6,0,4,pad
